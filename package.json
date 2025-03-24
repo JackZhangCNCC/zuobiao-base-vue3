@@ -1,0 +1,52 @@
+{
+  "name": "zuobiao-base-vue3",
+  "version": "1.0.0",
+  "description": "坐标基础 Base By Vue 3",
+  "author": "Johnson <https://github.com/JackZhangCNCC>",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:test": "vite build --mode test",
+    "build:prod": "vite build --mode production",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/ramda": "^0.29.11",
+    "ant-design-vue": "^4.2.6",
+    "apexcharts": "^4.0.0",
+    "axios": "^1.6.7",
+    "crypto-js": "^4.2.0",
+    "date-fns": "^3.6.0",
+    "enquire.js": "^2.1.6",
+    "nprogress": "^0.2.0",
+    "pinia": "^2.1.7",
+    "pinia-plugin-persistedstate": "^3.2.1",
+    "ramda": "^0.30.1",
+    "uuid": "^11.1.0",
+    "vue": "^3.4.19",
+    "vue-router": "^4.3.0",
+    "vue3-apexcharts": "^1.4.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "browserslist": "^4.24.4",
+    "less": "^4.2.0",
+    "postcss": "^8.4.35",
+    "vite": "^5.1.5"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "Chrome >= 49",
+    "Firefox >= 45"
+  ],
+  "resolutions": {
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  }
+}

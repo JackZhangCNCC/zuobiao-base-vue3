@@ -1,11 +1,13 @@
 <template>
   <div>
-    <a-drawer
+    <zb-drawer
       title="编辑按钮"
       :width="600"
-      :open="visible"
+      v-model:visible="visible"
       :body-style="{ paddingBottom: '80px' }"
       @close="onClose"
+      @confirm="handleSubmit"
+      :confirm-loading="loading"
     >
       <a-form :model="form" :rules="rules" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
         <a-form-item label="上级菜单" name="parentId">
@@ -47,20 +49,15 @@
           </a-select>
         </a-form-item>
       </a-form>
-
-      <div class="drawer-footer">
-        <a-button style="margin-right: 8px" @click="onClose">取消</a-button>
-        <a-button type="primary" @click="handleSubmit">提交</a-button>
-      </div>
-    </a-drawer>
+    </zb-drawer>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { message } from 'ant-design-vue';
-import { useRequest, handleResponse } from '../../../utils/request';
-import { useUserStore } from '../../../stores/user';
+import { useRequest, handleResponse } from '@/utils/request';
+import { useUserStore } from '@/stores/user';
 
 // 获取请求方法
 const { get, post } = useRequest();

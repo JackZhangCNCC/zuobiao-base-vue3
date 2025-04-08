@@ -29,7 +29,7 @@
                     </mask>
                     <g id="Rectangle-18">
                         <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-2"></use>
-                        <use fill="#F0F2F5" fill-rule="evenodd" xlink:href="#path-2"></use>
+                        <use fill="#f1f3f8" fill-rule="evenodd" xlink:href="#path-2"></use>
                     </g>
                     <rect id="Rectangle-11" fill="#303648" mask="url(#mask-3)" x="-1" y="0" width="49" height="10"></rect>
                 </g>

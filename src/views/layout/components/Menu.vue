@@ -12,7 +12,7 @@
       <template v-if="menu.children && menu.children.length > 0">
         <a-sub-menu :key="menu.path">
           <template #icon>
-            <component :is="menu.meta?.icon || 'AppstoreOutlined'" />
+            <component :is="getIconComponent(menu.meta?.icon)" />
           </template>
           <template #title>{{ menu.meta?.title || menu.name }}</template>
 
@@ -23,7 +23,7 @@
             @click="handleMenuClick(subMenu)"
           >
             <template #icon>
-              <component :is="subMenu.meta?.icon || 'FileOutlined'" />
+              <component :is="getIconComponent(subMenu.meta?.icon)" />
             </template>
             {{ subMenu.meta?.title || subMenu.name }}
           </a-menu-item>
@@ -34,7 +34,7 @@
       <template v-else>
         <a-menu-item :key="menu.path" @click="handleMenuClick(menu)">
           <template #icon>
-            <component :is="menu.meta?.icon || 'FileOutlined'" />
+            <component :is="getIconComponent(menu.meta?.icon)" />
           </template>
           {{ menu.meta?.title || menu.name }}
         </a-menu-item>
@@ -59,7 +59,54 @@ import {
   AppstoreOutlined,
   SafetyCertificateOutlined,
   MenuOutlined,
-  DashboardOutlined
+  DashboardOutlined,
+  GlobalOutlined,
+  FormOutlined,
+  TableOutlined,
+  MessageOutlined,
+  MailOutlined,
+  BellOutlined,
+  CalendarOutlined,
+  FolderOutlined,
+  ProjectOutlined,
+  ShopOutlined,
+  MoneyCollectOutlined,
+  DollarOutlined,
+  AreaChartOutlined,
+  LineChartOutlined,
+  BarChartOutlined,
+  PieChartOutlined,
+  EyeOutlined,
+  LockOutlined,
+  KeyOutlined,
+  TagOutlined,
+  TagsOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  SaveOutlined,
+  UploadOutlined,
+  DownloadOutlined,
+  CloudOutlined,
+  PrinterOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  LinkOutlined,
+  PlusOutlined,
+  MinusOutlined,
+  QuestionOutlined,
+  InfoCircleOutlined,
+  WarningOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  LaptopOutlined,
+  MobileOutlined,
+  TabletOutlined,
+  CarOutlined,
+  ClockCircleOutlined,
+  ScheduleOutlined,
+  StarOutlined,
+  HeartOutlined,
+  EnvironmentOutlined
 } from '@ant-design/icons-vue'
 
 const route = useRoute()
@@ -156,6 +203,107 @@ const findParentPathsByPath = (path) => {
   }
 
   return paths
+}
+
+// 获取图标组件
+const getIconComponent = (icon) => {
+  // 如果icon是有效的字符串
+  if (icon && typeof icon === 'string') {
+    // 导入的图标组件映射表 - 完整组件名称
+    const iconComponentMap = {
+      'HomeOutlined': HomeOutlined,
+      'SettingOutlined': SettingOutlined,
+      'UserOutlined': UserOutlined,
+      'TeamOutlined': TeamOutlined,
+      'FileOutlined': FileOutlined,
+      'AppstoreOutlined': AppstoreOutlined,
+      'SafetyCertificateOutlined': SafetyCertificateOutlined,
+      'MenuOutlined': MenuOutlined,
+      'DashboardOutlined': DashboardOutlined
+    }
+    
+    // 简短名称到组件的映射表
+    const iconNameMap = {
+      'home': HomeOutlined,
+      'setting': SettingOutlined,
+      'user': UserOutlined,
+      'team': TeamOutlined,
+      'file': FileOutlined,
+      'app': AppstoreOutlined,
+      'appstore': AppstoreOutlined,
+      'safety': SafetyCertificateOutlined,
+      'security': SafetyCertificateOutlined,
+      'menu': MenuOutlined,
+      'dashboard': DashboardOutlined,
+      'global': GlobalOutlined,
+      'profile': UserOutlined,
+      'audit': FileOutlined,
+      'form': FormOutlined,
+      'table': TableOutlined,
+      'message': MessageOutlined,
+      'mail': MailOutlined,
+      'bell': BellOutlined,
+      'notification': BellOutlined,
+      'calendar': CalendarOutlined,
+      'folder': FolderOutlined,
+      'project': ProjectOutlined,
+      'shop': ShopOutlined,
+      'money': MoneyCollectOutlined,
+      'dollar': DollarOutlined,
+      'chart': AreaChartOutlined,
+      'analysis': LineChartOutlined,
+      'bar': BarChartOutlined,
+      'pie': PieChartOutlined,
+      'eye': EyeOutlined,
+      'lock': LockOutlined,
+      'key': KeyOutlined,
+      'tag': TagOutlined,
+      'tags': TagsOutlined,
+      'delete': DeleteOutlined,
+      'edit': EditOutlined,
+      'save': SaveOutlined,
+      'upload': UploadOutlined,
+      'download': DownloadOutlined,
+      'cloud': CloudOutlined,
+      'printer': PrinterOutlined,
+      'search': SearchOutlined,
+      'filter': FilterOutlined,
+      'link': LinkOutlined,
+      'plus': PlusOutlined,
+      'minus': MinusOutlined,
+      'question': QuestionOutlined,
+      'info': InfoCircleOutlined,
+      'warning': WarningOutlined,
+      'check': CheckOutlined,
+      'close': CloseOutlined,
+      'laptop': LaptopOutlined,
+      'mobile': MobileOutlined,
+      'tablet': TabletOutlined,
+      'car': CarOutlined,
+      'clock': ClockCircleOutlined,
+      'schedule': ScheduleOutlined,
+      'star': StarOutlined,
+      'heart': HeartOutlined,
+      'environment': EnvironmentOutlined,
+      'location': EnvironmentOutlined
+    }
+    
+    // 1. 先检查完整组件名称映射
+    if (iconComponentMap[icon]) {
+      return iconComponentMap[icon]
+    }
+    
+    // 2. 再检查简短名称映射
+    if (iconNameMap[icon.toLowerCase()]) {
+      return iconNameMap[icon.toLowerCase()]
+    }
+    
+    // 3. 如果是字符串但不在映射表中，尝试直接返回（兼容其他可能的组件名）
+    return icon
+  }
+  
+  // 默认返回 MenuOutlined 图标
+  return MenuOutlined
 }
 </script>
 

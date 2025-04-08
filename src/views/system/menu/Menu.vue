@@ -1,121 +1,63 @@
 <template>
   <div class="menu-management">
-    <search-card @search="handleQuery" @reset="resetQuery">
-      <template #search-items>
-        <search-form-item label="菜单名称">
-          <a-input v-model:value="queryParams.menuName" placeholder="请输入" allowClear />
-        </search-form-item>
+    <!-- 搜索表单 - 按照TableDemo的方式使用 -->
+    <zb-search-form
+      ref="searchFormRef"
+      :fields="searchFields"
+      :initial-values="queryParams"
+      @search="handleQuery"
+      @reset="resetQuery"
+      :loading="loading"
+    />
 
-        <search-form-item label="创建时间">
-          <a-range-picker v-model:value="rangePickerValue" style="width: 100%" />
-        </search-form-item>
+    <!-- 表格 - 与TableDemo保持一致的用法 -->
+    <zb-table
+      :loading="loading"
+      :columns="columns"
+      :dataSource="menuList"
+      :rowSelection="{ type: 'checkbox' }"
+      rowKey="id"
+      size="middle"
+      bordered
+      :expandable="{
+        defaultExpandAllRows: true,
+        indentSize: 20
+      }"
+      :childrenColumnName="'children'"
+      @add="handleAdd"
+      @refresh="getList"
+      @batch-delete="handleBatchDelete"
+      @export="exportExcel"
+    >
+    </zb-table>
 
-        <search-form-item label="子系统">
-          <a-select
-            v-model:value="queryParams.sysId"
-            placeholder="请选择"
-            style="width: 100%"
-            allowClear
-          >
-            <a-select-option v-for="item in subsystemOptions" :key="item.value" :value="item.value">
-              {{ item.text }}
-            </a-select-option>
-          </a-select>
-        </search-form-item>
-      </template>
-
-      <template #operations>
-        <action-buttons
-          :hasSelected="selectedRowKeys.length > 0"
-          @add="handleAdd"
-          @delete="handleBatchDelete"
-          @export="exportExcel"
-        />
-      </template>
-
-      <template #table>
-        <a-table
-          :dataSource="menuList"
-          :columns="columns"
-          :pagination="false"
-          :loading="loading"
-          rowKey="id"
-          :row-selection="{
-            selectedRowKeys: selectedRowKeys,
-            onChange: onSelectChange,
-            columnWidth: '55px',
-            columnTitle: ' ',
-            type: 'checkbox',
-            preserveSelectedRowKeys: false
-          }"
-          size="middle"
-          bordered
-        >
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.dataIndex === 'icon'">
-              <component :is="getIconComponent(record.icon)" v-if="record.icon" />
-            </template>
-            <template v-if="column.dataIndex === 'visible'">
-              <a-tag :color="record.hidden === '0' || record.hidden === false ? 'green' : 'red'">
-                {{ record.hidden === '0' || record.hidden === false ? '显示' : '隐藏' }}
-              </a-tag>
-            </template>
-            <template v-if="column.dataIndex === 'type'">
-              <a-tag :color="record.type === 'M' ? 'blue' : (record.type === 'C' ? 'cyan' : 'purple')">
-                {{ record.type === 'M' ? '菜单' : (record.type === 'C' ? '组件' : '按钮') }}
-              </a-tag>
-            </template>
-            <template v-if="column.dataIndex === 'operation'">
-              <a-space>
-                <a @click="handleAddChild(record)" v-if="record.type !== 'F'">新增子菜单</a>
-                <a @click="handleAddButton(record)" v-if="record.type !== 'F'">新增按钮</a>
-                <a @click="handleEdit(record)">编辑</a>
-                <a-popconfirm
-                  title="确定删除该菜单吗？"
-                  @confirm="handleDelete(record)"
-                  okText="确定"
-                  cancelText="取消"
-                >
-                  <a class="danger-text">删除</a>
-                </a-popconfirm>
-              </a-space>
-            </template>
-          </template>
-        </a-table>
-      </template>
-
-      <template #dialogs>
-        <MenuAdd ref="menuAddRef" @close="handleMenuAddClose" @success="handleMenuAddSuccess" />
-        <MenuEdit ref="menuEditRef" @close="handleMenuEditClose" @success="handleMenuEditSuccess" />
-        <ButtonAdd ref="buttonAddRef" @close="handleButtonAddClose" @success="handleButtonAddSuccess" />
-        <ButtonEdit ref="buttonEditRef" @close="handleButtonEditClose" @success="handleButtonEditSuccess" />
-      </template>
-    </search-card>
+    <!-- 保留原有的抽屉组件和弹框 -->
+    <MenuAdd ref="menuAddRef" @close="handleMenuAddClose" @success="handleMenuAddSuccess" />
+    <MenuEdit ref="menuEditRef" @close="handleMenuEditClose" @success="handleMenuEditSuccess" />
+    <ButtonAdd ref="buttonAddRef" @close="handleButtonAddClose" @success="handleButtonAddSuccess" />
+    <ButtonEdit ref="buttonEditRef" @close="handleButtonEditClose" @success="handleButtonEditSuccess" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, h } from 'vue';
 import {
-  SearchOutlined,
-  ReloadOutlined,
   PlusOutlined,
   DeleteOutlined,
   DownloadOutlined
 } from '@ant-design/icons-vue';
 // 导入所有Ant Design图标
 import * as AntIcons from '@ant-design/icons-vue';
-import { message, Modal } from 'ant-design-vue';
-import { useRequest, handleResponse } from '../../../utils/request';
-import { useUserStore } from '../../../stores/user';
+import { message, Modal, Tag } from 'ant-design-vue';
+import { useRequest, handleResponse } from '@/utils/request';
+import { useUserStore } from '@/stores/user';
 import MenuAdd from './MenuAdd.vue';
 import MenuEdit from './MenuEdit.vue';
 import ButtonAdd from './ButtonAdd.vue';
 import ButtonEdit from './ButtonEdit.vue';
-import SearchCard from '@/components/layout/SearchCard.vue';
-import SearchFormItem from '@/components/form/SearchFormItem.vue';
-import ActionButtons from '@/components/operation/ActionButtons.vue';
 import { format } from 'date-fns';
+// 引入zb-drawer组件
+import ZbDrawer from '@/components/zb-ui/zb-drawer.vue';
 
 // 获取请求方法
 const { get, post, export: exportExcelFile } = useRequest();
@@ -127,85 +69,145 @@ const menuAddRef = ref(null);
 const menuEditRef = ref(null);
 const buttonAddRef = ref(null);
 const buttonEditRef = ref(null);
-const queryFormRef = ref(null);
+const searchFormRef = ref(null);
 
-// 数据加载状态
+// 状态管理
 const loading = ref(false);
-// 菜单列表数据 - 确保初始化为空数组
 const menuList = ref([]);
-// 选中的行
-const selectedRowKeys = ref([]);
-// 日期选择值
-const rangePickerValue = ref([]);
 
 // 查询参数
 const queryParams = reactive({
   menuName: '',
   sysId: undefined,
-  createTimeFrom: '',
-  createTimeTo: ''
+  dateRange: []
 });
 
-// 表格列定义
+// 搜索表单配置
+const searchFields = [
+  {
+    field: 'dateRange',
+    label: '创建时间',
+    type: 'dateRange'
+  },
+  {
+    field: 'sysId',
+    label: '子系统',
+    type: 'select',
+    options: [], // 将从后端获取
+    placeholder: '请选择子系统'
+  }
+];
+
+// 表格列配置
 const columns = [
   {
     title: '菜单名称',
     dataIndex: 'name',
-    key: 'name',
-    width: '15%'
+    width: '15%',
+    customRender: ({ text, record }) => {
+      const prefix = record.type === 'M' ? '📁 ' : 
+                     record.type === 'C' ? '📄 ' : 
+                     record.type === 'F' ? '🔘 ' : '';
+      return h('span', {
+        style: {
+          fontWeight: record.type === 'M' ? 'bold' : 'normal'
+        }
+      }, prefix + text);
+    }
   },
   {
     title: '图标',
     dataIndex: 'icon',
-    key: 'icon',
-    width: '5%'
+    width: '5%',
+    customRender: ({ text, record }) => {
+      if (!record.icon) return null;
+      const iconComp = getIconComponent(record.icon);
+      return h(iconComp);
+    }
   },
   {
     title: '排序',
     dataIndex: 'orderNum',
-    key: 'orderNum',
     width: '8%'
   },
   {
     title: '权限标识',
     dataIndex: 'perms',
-    key: 'perms',
     width: '15%'
   },
   {
     title: '路径',
     dataIndex: 'path',
-    key: 'path',
     width: '10%'
   },
   {
     title: '组件',
     dataIndex: 'component',
-    key: 'component',
     width: '10%'
   },
   {
     title: '类型',
     dataIndex: 'type',
-    key: 'type',
-    width: '8%'
+    width: '8%',
+    customRender: ({ text }) => {
+      const typeColors = {
+        M: 'blue',
+        C: 'cyan',
+        F: 'purple'
+      };
+      const typeTexts = {
+        M: '菜单',
+        C: '组件',
+        F: '按钮'
+      };
+      return h(Tag, { color: typeColors[text] || 'default' }, () => typeTexts[text] || '未知');
+    }
   },
   {
     title: '可见',
     dataIndex: 'visible',
-    key: 'visible',
-    width: '8%'
+    width: '8%',
+    customRender: ({ record }) => {
+      return h(Tag, { 
+        color: record.hidden == '0' || record.hidden === false ? '#87d068' : '#f50' 
+      }, () => record.hidden == '0' || record.hidden === false ? '显示' : '隐藏');
+    }
   },
   {
     title: '操作',
     dataIndex: 'operation',
-    key: 'operation',
-    width: '20%'
+    width: '15%',
+    fixed: 'right',
+    customRender: ({ record }) => {
+      const children = [];
+      
+      if (record.type !== 'F') {
+        children.push(h('a', { 
+          onClick: () => handleAddChild(record),
+          style: 'cursor: pointer; margin-right: 8px;' 
+        }, '新增子菜单'));
+        
+        children.push(h('a', { 
+          onClick: () => handleAddButton(record),
+          style: 'cursor: pointer; margin-right: 8px;' 
+        }, '新增按钮'));
+      }
+      
+      children.push(h('a', { 
+        onClick: () => handleEdit(record),
+        style: 'cursor: pointer; margin-right: 8px;' 
+      }, '编辑'));
+      
+      children.push(h('a', { 
+        onClick: () => confirmDelete(record),
+        class: 'danger-text',
+        style: 'cursor: pointer;' 
+      }, '删除'));
+      
+      return h('div', { class: 'operation-buttons' }, children);
+    }
   }
 ];
-
-// 子系统选项列表
-const subsystemOptions = ref([]);
 
 // 获取子系统列表
 const getSubsystemList = async () => {
@@ -215,10 +217,10 @@ const getSubsystemList = async () => {
     const { data } = await get(`/auth/sys/selectSysList?userId=${userId}`)
     if (handleResponse(data, null, '获取子系统列表失败')) {
       // 转换为下拉选项格式
-      subsystemOptions.value = data.obj.map(item => ({
-        value: item.sysId,
-        text: item.sysName
-      }))
+      searchFields[1].options = data.obj.map(item => ({
+        label: item.sysName,
+        value: item.sysId
+      }));
 
       // 设置默认系统ID
       if (data.obj.length > 0) {
@@ -228,57 +230,91 @@ const getSubsystemList = async () => {
       }
     }
   } catch (error) {
-    console.error('获取子系统列表失败', error)
+    console.error('获取子系统列表失败', error);
   }
 }
-
-// 表格选择变化
-const onSelectChange = (keys) => {
-  selectedRowKeys.value = keys;
-};
 
 // 查询菜单列表
 const getList = async () => {
   loading.value = true;
   try {
+    console.log('开始加载菜单列表, 参数:', queryParams);
     // 创建最终的请求参数对象
     const requestParams = {};
 
     // 处理日期范围参数
-    if (rangePickerValue.value && rangePickerValue.value.length > 0) {
-      requestParams.createTimeFrom = format(rangePickerValue.value[0], 'yyyy-MM-dd');
-      requestParams.createTimeTo = format(rangePickerValue.value[1], 'yyyy-MM-dd');
+    if (queryParams.dateRange && Array.isArray(queryParams.dateRange) && queryParams.dateRange.length === 2) {
+      try {
+        // 获取日期对象，但不使用instanceof，因为响应式对象会干扰该判断
+        const startDate = queryParams.dateRange[0];
+        const endDate = queryParams.dateRange[1];
+        
+        // 尝试直接转换为时间戳判断有效性
+        const startTime = startDate && startDate.getTime ? startDate.getTime() : (new Date(startDate)).getTime();
+        const endTime = endDate && endDate.getTime ? endDate.getTime() : (new Date(endDate)).getTime();
+        
+        if (!isNaN(startTime) && !isNaN(endTime)) {
+          // 使用时间戳创建新的日期对象，避开响应式问题
+          requestParams.createTimeFrom = format(new Date(startTime), 'yyyy-MM-dd');
+          requestParams.createTimeTo = format(new Date(endTime), 'yyyy-MM-dd');
+          console.log('日期格式化成功', requestParams.createTimeFrom, requestParams.createTimeTo);
+        } else {
+          console.warn('日期格式化失败: 无效日期', startDate, endDate);
+        }
+      } catch (error) {
+        console.error('日期格式化失败:', error);
+        // 出错时不添加日期参数
+      }
     }
 
-    // 仅添加有值的参数
-    if (queryParams.menuName) {
-      requestParams.menuName = queryParams.menuName;
+    // 仅添加有值的参数，关键词搜索使用menuName传递
+    if (queryParams.keyword) {
+      requestParams.menuName = queryParams.keyword;
     }
 
     if (queryParams.sysId) {
       requestParams.sysId = queryParams.sysId;
     }
 
-    // 发起请求获取菜单列表，不默认添加type参数
+    // 发起请求获取菜单列表
     const { data } = await get('auth/menu', requestParams);
 
     if (data.code == 200 && data.obj) {
-      // 输出完整的菜单数据用于调试
-      console.log('API返回的菜单数据:', JSON.stringify(data.obj));
-
-      // 确保子级菜单在父级后面
-      const menuData = data.obj.rows.children || [];
-      // 处理后端返回的数据格式
-      processMenuData(menuData);
-      // 设置菜单列表数据
-      menuList.value = menuData;
-
-      // 打印处理后的第一个菜单数据，用于调试
-      if (menuData.length > 0) {
-        console.log('第一个菜单数据示例:', JSON.stringify(menuData[0]));
+      
+      if (data.obj.rows) {
+      
+        // 尝试不同的数据结构，确保能够正确获取菜单数据
+        let menuData = [];
+        
+        if (data.obj.rows?.children) {
+          // 第一种情况：data.obj.rows.children
+          menuData = data.obj.rows.children;
+          console.log('使用 data.obj.rows.children 结构');
+        } else if (data.obj.rows) {
+          // 第二种情况：data.obj.rows
+          menuData = data.obj.rows;
+          console.log('使用 data.obj.rows 结构');
+        } else if (Array.isArray(data.obj)) {
+          // 第三种情况：data.obj是数组
+          menuData = data.obj;
+          console.log('使用 data.obj 数组结构');
+        } else if (typeof data.obj === 'object') {
+          // 第四种情况：data.obj是对象，尝试找children
+          menuData = data.obj.children || [];
+          console.log('使用 data.obj.children 结构');
+        }
+        
+        // 处理后端返回的数据格式
+        processMenuData(menuData);
+        console.log('处理后的菜单数据:', menuData);
+        
+        // 设置菜单列表数据
+        menuList.value = menuData;
+        
+      } else {
+        menuList.value = []; // 发生错误时，重置为空数组
+        console.log('API返回错误或无数据, code:', data.code);
       }
-    } else {
-      menuList.value = []; // 发生错误时，重置为空数组
     }
   } catch (error) {
     console.error('获取菜单列表失败', error);
@@ -286,6 +322,17 @@ const getList = async () => {
     menuList.value = []; // 发生错误时，重置为空数组
   } finally {
     loading.value = false;
+    
+    // 检查菜单数据
+    if (menuList.value.length > 0) {
+      const firstItem = menuList.value[0];
+      console.log('【菜单数据示例】:', firstItem);
+      console.log('【菜单ID字段检查】:', {
+        hasId: 'id' in firstItem,
+        id值: firstItem.id,
+        menuId值: firstItem.menuId
+      });
+    }
   }
 };
 
@@ -295,9 +342,9 @@ const processMenuData = (menus) => {
 
   menus.forEach(menu => {
     // 处理菜单类型
-    if (menu.type === '0') {
+    if (menu.type == '0') {
       menu.type = 'M'; // 菜单
-    } else if (menu.type === '1') {
+    } else if (menu.type == '1') {
       menu.type = 'F'; // 按钮
     } else if (!menu.type) {
       menu.type = 'C'; // 默认为组件
@@ -307,7 +354,7 @@ const processMenuData = (menus) => {
     // 兼容 hidden 和 visible 字段，hidden为0或false表示显示，与visible=0的逻辑相同
     if (menu.hidden !== undefined && menu.visible === undefined) {
       // 根据hidden字段设置visible
-      menu.visible = menu.hidden === '0' || menu.hidden === false ? '0' : '1';
+      menu.visible = menu.hidden == '0' || menu.hidden === false ? '0' : '1';
     }
 
     // 处理其他属性的映射
@@ -315,35 +362,53 @@ const processMenuData = (menus) => {
     menu.orderNum = menu.order || menu.orderNum; // 排序字段
     menu.perms = menu.permission || menu.perms; // 权限标识字段
 
+    // 确保子菜单数组存在
+    if (!menu.children) {
+      menu.children = [];
+    }
+
     // 递归处理子菜单
     if (menu.children && menu.children.length > 0) {
       processMenuData(menu.children);
+    } else {
+      // 如果没有子菜单，删除空的children数组以避免显示展开图标
+      delete menu.children;
     }
   });
 };
 
 // 查询按钮事件
-const handleQuery = () => {
-  selectedRowKeys.value = [];
+const handleQuery = (values) => {
+  // 重置查询参数
+  Object.keys(queryParams).forEach(key => {
+    queryParams[key] = undefined;
+  });
+  
+  // 合并新的查询参数
+  Object.assign(queryParams, values);
+  
+  // 执行查询
   getList();
 };
 
 // 重置查询
 const resetQuery = () => {
-  // 重置所有查询条件
-  queryParams.menuName = '';
-  queryParams.sysId = undefined;
-  queryParams.createTimeFrom = '';
-  queryParams.createTimeTo = '';
-
-  // 清空日期范围选择器
-  rangePickerValue.value = [];
-
-  // 清空选中行
-  selectedRowKeys.value = [];
-
-  // 重新查询
+  searchFormRef.value?.resetFields();
+  // 确保所有参数被清空
+  Object.keys(queryParams).forEach(key => {
+    queryParams[key] = undefined;
+  });
   getList();
+};
+
+// 确认删除
+const confirmDelete = (record) => {
+  Modal.confirm({
+    title: '确定删除该菜单吗？',
+    content: '删除后将无法恢复，如果包含子菜单或按钮，将一并删除！',
+    centered: true,
+    onOk: () => handleDelete(record)
+  });
 };
 
 // 新增菜单
@@ -369,12 +434,10 @@ const handleAddButton = (record) => {
 
 // 编辑菜单
 const handleEdit = (record) => {
-  if (menuEditRef.value) {
-    if (record.type === 'F') {
-      buttonEditRef.value.open(record);
-    } else {
-      menuEditRef.value.open(record);
-    }
+  if (record.type === 'F') {
+    buttonEditRef.value.open(record);
+  } else {
+    menuEditRef.value.open(record);
   }
 };
 
@@ -395,11 +458,13 @@ const handleDelete = async (record) => {
 };
 
 // 批量删除
-const handleBatchDelete = async () => {
-  if (selectedRowKeys.value.length === 0) {
+const handleBatchDelete = async (selectedKeys, selectedRows) => {
+  if (selectedKeys.length === 0) {
     message.warning('请选择要删除的菜单');
     return;
   }
+
+  console.log('执行批量删除，已选择ID:', selectedKeys);
 
   Modal.confirm({
     title: '确定删除所选中的记录?',
@@ -408,11 +473,10 @@ const handleBatchDelete = async () => {
     async onOk() {
       try {
         const { data } = await post('auth/menu/del', {
-          menuIds: selectedRowKeys.value.join(',')
+          menuIds: selectedKeys.join(',')
         });
 
         if (handleResponse(data, '删除成功', '删除失败')) {
-          selectedRowKeys.value = [];
           getList();
         }
       } catch (error) {
@@ -421,7 +485,7 @@ const handleBatchDelete = async () => {
       }
     },
     onCancel() {
-      selectedRowKeys.value = [];
+      // 取消时不清除选择
     }
   });
 };
@@ -558,32 +622,36 @@ const getIconComponent = (iconName) => {
   return AntIcons['QuestionCircleOutlined'];
 };
 
-// 生命周期钩子
+// 初始化
 onMounted(() => {
-  // 先获取子系统列表，在子系统列表的回调中会调用getList()
+  // 获取子系统列表，在子系统列表的回调中会调用getList()
   getSubsystemList();
-  // 不要在这里直接调用getList()，避免重复调用
 });
 </script>
 
-<style scoped>
+<style lang="less" scoped>
 .menu-management {
-  padding: 16px;
-}
-
-.card-container {
-  box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09);
-}
-
-.ant-advanced-search-form {
-  margin-bottom: 16px;
-  padding: 16px;
-  background: #fbfbfb;
-  border: 1px solid #d9d9d9;
-  border-radius: 2px;
-}
-
-.danger-text {
-  color: #ff4d4f;
+  .operation-buttons {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+    
+    a {
+      cursor: pointer;
+      color: @primary-color;
+      
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+    
+    .danger-text {
+      color: #ff4d4f;
+      
+      &:hover {
+        color: #ff7875;
+      }
+    }
+  }
 }
 </style>

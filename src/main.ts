@@ -7,6 +7,9 @@ import Antd from 'ant-design-vue'
 import VueApexCharts from 'vue3-apexcharts'
 import setupPermissionDirectives from './utils/permissionDirect'
 
+// 导入自定义组件库
+import ZbUI from './components/zb-ui'
+
 // 导入dayjs并设置中文语言
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
@@ -18,6 +21,7 @@ dayjs.locale('zh-cn')
 import 'ant-design-vue/dist/reset.css'
 import './styles/theme.less'
 import './styles/utils.less'
+import './styles/ant-custom.less'
 import './assets/styles/index.less'
 
 // 创建应用
@@ -32,6 +36,7 @@ app.use(router)
 app.use(pinia)
 app.use(Antd)
 app.use(VueApexCharts)
+app.use(ZbUI) // 注册自定义组件库
 
 // 注册权限指令
 setupPermissionDirectives(app)

@@ -1,26 +1,32 @@
 <template>
   <div>
-    <a-drawer
+    <zb-drawer
       :title="parentMenu ? `新增${parentMenu.name}的子菜单` : '新增菜单'"
       :width="600"
-      :open="visible"
+      v-model:visible="visible"
       :body-style="{ paddingBottom: '80px' }"
       :maskClosable="false"
       @close="onClose"
+      @confirm="onSubmit"
+      :confirm-loading="loading"
     >
       <a-form :model="form" :rules="rules" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
         <a-form-item label="上级菜单" name="parentId">
-          <a-tree-select
-            v-model:value="form.parentId"
-            style="width: 100%"
-            :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-            :tree-data="menuTree"
-            placeholder="请选择上级菜单"
-            tree-default-expand-all
-            :fieldNames="{ label: 'text', key: 'id', value: 'id' }"
-            allow-clear
-            :disabled="!!parentMenu"
-          />
+          <template v-if="!!parentMenu">
+            <a-input :value="parentMenu.name || parentMenu.text" disabled />
+          </template>
+          <template v-else>
+            <a-tree-select
+              v-model:value="form.parentId"
+              style="width: 100%"
+              :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
+              :tree-data="menuTree"
+              placeholder="请选择上级菜单"
+              tree-default-expand-all
+              :fieldNames="{ label: 'text', key: 'id', value: 'id' }"
+              allow-clear
+            />
+          </template>
         </a-form-item>
 
         <a-form-item label="菜单类型" name="type">
@@ -95,12 +101,7 @@
           </a-select>
         </a-form-item>
       </a-form>
-
-      <div class="drawer-footer">
-        <a-button style="margin-right: 8px" @click="onClose">取消</a-button>
-        <a-button type="primary" @click="onSubmit">提交</a-button>
-      </div>
-    </a-drawer>
+    </zb-drawer>
 
     <!-- 图标选择器弹窗 -->
     <Icons ref="iconsRef" @select="handleIconSelect" />
@@ -110,8 +111,8 @@
 <script setup>
 import { ref, reactive, nextTick, onMounted, computed, watchEffect } from 'vue';
 import { message } from 'ant-design-vue';
-import { useRequest, handleResponse, handleMenuResponse } from '../../../utils/request';
-import { useUserStore } from '../../../stores/user';
+import { useRequest, handleResponse, handleMenuResponse } from '@/utils/request';
+import { useUserStore } from '@/stores/user';
 import Icons from './Icons.vue';
 import * as AntIcons from '@ant-design/icons-vue';
 
@@ -199,7 +200,7 @@ const getSubsystemList = async () => {
 
       // 设置默认系统ID - 使用用户当前的系统ID
       const userSysId = userStore.user?.sysId;
-      if (userSysId && subsystemOptions.value.some(option => option.value === userSysId)) {
+      if (userSysId && subsystemOptions.value.some(option => option.value == userSysId)) {
         // 如果用户系统ID在选项中，使用用户系统ID
         menu.sysId = userSysId;
         form.subsystem = userSysId;
@@ -309,9 +310,9 @@ const resetForm = () => {
 
   // 重置menu对象
   Object.keys(menu).forEach(key => {
-    if (typeof menu[key] === 'string') {
+    if (typeof menu[key] == 'string') {
       menu[key] = ''
-    } else if (typeof menu[key] === 'boolean') {
+    } else if (typeof menu[key] == 'boolean') {
       menu[key] = false
     } else if (Array.isArray(menu[key])) {
       menu[key] = []
@@ -405,12 +406,12 @@ const onSubmit = () => {
       // icon已经在选择图标时更新
       menu.orderNum = form.orderNum
       menu.sysId = form.subsystem
-      menu.hidden = form.visible === '1'
+      menu.hidden = form.visible == '1'
       // 类型：0表示菜单，1表示按钮
       menu.type = '0'
 
       // 处理外部链接URL
-      if (menu.isFrame === '1' && menu.path) {
+      if (menu.isFrame == '1' && menu.path) {
         if (!menu.path.startsWith('http://') && !menu.path.startsWith('https://')) {
           menu.path = 'http://' + menu.path
         }
@@ -442,7 +443,7 @@ const onSubmit = () => {
 // 处理菜单类型变化
 const handleTypeChange = (e) => {
   form.type = e.target.value;
-  if (form.type === 'M') {
+  if (form.type == 'M') {
     form.component = '';
   }
 };
@@ -524,7 +525,7 @@ const getIconComponent = (iconName) => {
 // 子系统变化
 const handleSubsystemChange = (value) => {
   // 如果值未变化，不做处理
-  if (value === menu.sysId) return;
+  if (value == menu.sysId) return;
 
   // 更新系统ID
   menu.sysId = value;

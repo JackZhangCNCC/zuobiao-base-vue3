@@ -154,7 +154,7 @@ import DeptInputTree from '../dept/DeptInputTree.vue'
 import RangeDate from '@/components/datetime/RangeDate.vue'
 import UserAdd from './UserAdd.vue'
 import UserEdit from './UserEdit.vue'
-import { useRequest, handleResponse } from '../../../utils/request'
+import { useRequest, handleResponse } from '@/utils/request'
 import SearchCard from '@/components/layout/SearchCard.vue'
 import SearchFormItem from '@/components/form/SearchFormItem.vue'
 import ActionButtons from '@/components/operation/ActionButtons.vue'
@@ -534,7 +534,6 @@ const fetchFromPageOne = async (params = {}) => {
 
 <style lang="less" scoped>
 .user-management {
-  padding: 16px;
 }
 
 .icon-button {

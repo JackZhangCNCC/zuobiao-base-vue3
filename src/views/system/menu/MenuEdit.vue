@@ -1,11 +1,13 @@
 <template>
   <div>
-    <a-drawer
+    <zb-drawer
       title="编辑菜单"
       :width="600"
-      :open="visible"
+      v-model:visible="visible"
       :body-style="{ paddingBottom: '80px' }"
       @close="onClose"
+      @confirm="onSubmit"
+      :confirm-loading="loading"
     >
       <a-form :model="form" :rules="rules" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
         <a-form-item label="上级菜单" name="parentId">
@@ -91,12 +93,7 @@
           </a-select>
         </a-form-item>
       </a-form>
-
-      <div class="drawer-footer">
-        <a-button style="margin-right: 8px" @click="onClose">取消</a-button>
-        <a-button type="primary" @click="onSubmit">提交</a-button>
-      </div>
-    </a-drawer>
+    </zb-drawer>
 
     <!-- 图标选择器弹窗 -->
     <Icons ref="iconSelectRef" @select="handleIconSelect" />
@@ -109,8 +106,8 @@ import Icons from './Icons.vue';
 // 导入所有Ant Design图标
 import * as AntIcons from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { useRequest, handleResponse, handleMenuResponse } from '../../../utils/request';
-import { useUserStore } from '../../../stores/user';
+import { useRequest, handleResponse, handleMenuResponse } from '@/utils/request';
+import { useUserStore } from '@/stores/user';
 
 // 获取API
 const { get, post } = useRequest();
@@ -196,7 +193,7 @@ const getSubsystemList = async () => {
     // 获取当前用户ID
     const userId = userStore.user?.id || '';
     const { data } = await get(`/auth/sys/selectSysList?userId=${userId}`)
-    if (data.code === 200 && data.obj) {
+    if (data.code == 200 && data.obj) {
       // 转换为下拉选项格式
       subsystemOptions.value = data.obj.map(item => ({
         value: item.sysId,
@@ -235,7 +232,7 @@ const getMenuTree = async (sysId) => {
     // 传递系统ID参数，添加type=0表示获取菜单类型，与Vue2项目保持一致
     const { data } = await get(`auth/menu?type=0&sysId=${sysId || form.subsystem || ''}`)
 
-    if (data.code === 200 && data.obj) {
+    if (data.code == 200 && data.obj) {
       menuTreeData.value = data.obj.rows.children;
       // 保存所有树节点ID，用于展开/折叠全部功能
       allTreeKeys.value = data.obj.ids;
@@ -265,7 +262,7 @@ const getMenuInfo = async (id) => {
         if (!list || !list.length) return null;
 
         for (const item of list) {
-          if (item.id === targetId) {
+          if (item.id == targetId) {
             return item;
           }
           if (item.children && item.children.length) {
@@ -286,8 +283,8 @@ const getMenuInfo = async (id) => {
       if (menuInfo) {
         // 设置表单数据，保持字段映射一致
         form.id = menuInfo.id;
-        form.parentId = menuInfo.parentId === '0' ? undefined : menuInfo.parentId;
-        form.type = menuInfo.type === '0' ? 'M' : 'C';
+        form.parentId = menuInfo.parentId == '0' ? undefined : menuInfo.parentId;
+        form.type = menuInfo.type == '0' ? 'M' : 'C';
         form.name = menuInfo.text || menuInfo.name || menuInfo.menuName || '';
         form.component = menuInfo.component || '';
         form.path = menuInfo.path || '';
@@ -295,7 +292,7 @@ const getMenuInfo = async (id) => {
         form.icon = menuInfo.icon || '';
         form.orderNum = menuInfo.order || menuInfo.orderNum || 0;
         // 处理可见状态
-        form.visible = menuInfo.hidden === true || menuInfo.hidden === '1' ? '1' : '0';
+        form.visible = menuInfo.hidden == true || menuInfo.hidden == '1' ? '1' : '0';
         form.subsystem = menuInfo.sysId;
         form.isFrame = menuInfo.isFrame || '0';
 
@@ -330,9 +327,9 @@ const resetForm = () => {
   checkedKeys.value = [];
   defaultCheckedKeys.value = [];
   Object.keys(menu).forEach(key => {
-    if (typeof menu[key] === 'string') {
+    if (typeof menu[key] == 'string') {
       menu[key] = '';
-    } else if (typeof menu[key] === 'boolean') {
+    } else if (typeof menu[key] == 'boolean') {
       menu[key] = false;
     } else if (Array.isArray(menu[key])) {
       menu[key] = [];
@@ -362,7 +359,7 @@ const onSubmit = () => {
       return;
     }
 
-    if (checkedArr[0] === menu.menuId) {
+    if (checkedArr[0] == menu.menuId) {
       message.error('不能选择自己作为上级菜单，请修改');
       return;
     }
@@ -380,7 +377,7 @@ const onSubmit = () => {
         icon: menu.icon, // 使用menu.icon而不是form.icon
         orderNum: form.orderNum,
         sysId: form.subsystem,
-        hidden: form.visible === '1',
+        hidden: form.visible == '1',
         type: '0', // 0 表示菜单 1 表示按钮
         isFrame: form.isFrame,
       };
@@ -393,7 +390,7 @@ const onSubmit = () => {
       }
 
       // 处理外部链接URL
-      if (updatedMenu.isFrame === '1' && updatedMenu.path) {
+      if (updatedMenu.isFrame == '1' && updatedMenu.path) {
         if (!updatedMenu.path.startsWith('http://') && !updatedMenu.path.startsWith('https://')) {
           updatedMenu.path = 'http://' + updatedMenu.path;
         }
@@ -403,8 +400,11 @@ const onSubmit = () => {
 
       // 使用专门针对菜单接口的响应处理函数，移除成功提示参数
       if (handleMenuResponse(response, null)) {
-        resetForm();
-        emit('success');
+        visible.value = false; // 先关闭抽屉，再重置表单
+        nextTick(() => {
+          resetForm();
+          emit('success');
+        });
       }
     } catch (error) {
       console.error('修改菜单失败', error);
@@ -420,7 +420,7 @@ const onSubmit = () => {
 // 处理菜单类型变化
 const handleTypeChange = (e) => {
   form.type = e.target.value;
-  if (form.type === 'M') {
+  if (form.type == 'M') {
     form.component = '';
   }
 };
@@ -475,7 +475,7 @@ const setFormValues = (menuData) => {
   form.orderNum = menuData.order || menuData.orderNum || 0;
   form.visible = menuData.hidden ? '1' : '0';
   form.subsystem = menuData.sysId;
-  form.type = menuData.type === '0' ? 'M' : 'C';
+  form.type = menuData.type == '0' ? 'M' : 'C';
   form.isFrame = menuData.isFrame || '0';
 
   // 设置菜单ID

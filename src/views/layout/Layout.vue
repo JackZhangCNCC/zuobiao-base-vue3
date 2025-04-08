@@ -60,7 +60,7 @@ import FooterComponent from './components/Footer.vue'
 const appStore = useAppStore()
 
 // 侧边栏状态
-const sidebarWidth = 256
+const sidebarWidth = ref('256px')
 const sidebarCollapsed = computed({
   get: () => appStore.sidebarCollapsed,
   set: (value) => appStore.setSidebarCollapsed(value)
@@ -77,11 +77,17 @@ const toggleSidebar = () => {
 // 处理侧边栏折叠状态变化
 const handleCollapse = (collapsed) => {
   appStore.setSidebarCollapsed(collapsed)
+  if (collapsed) {
+    sidebarWidth.value = '80px'
+  } else {
+    sidebarWidth.value = '256px'
+  }
 }
 
 onMounted(() => {
   // 移动端默认折叠侧边栏
   if (appStore.isMobile && !sidebarCollapsed.value) {
+    sidebarWidth.value = '80px'
     appStore.setSidebarCollapsed(true)
   }
 })
@@ -119,6 +125,11 @@ onMounted(() => {
         }
       }
     }
+
+    :deep(.ant-layout-sider-children) {
+      width: v-bind('sidebarWidth');
+      position: fixed;
+    }
   }
 
   .header-container {
@@ -131,8 +142,6 @@ onMounted(() => {
     margin: 16px;
 
     .content-wrapper {
-      padding: 16px;
-      background: #fff;
       min-height: 280px;
     }
   }

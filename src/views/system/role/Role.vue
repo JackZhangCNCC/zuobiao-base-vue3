@@ -222,7 +222,7 @@ onMounted(() => {
 const fetchMainpageOptions = async () => {
   try {
     const { data } = await post('auth/mainpage/selectAll', {})
-    if (data.code === 200) {
+    if (data.code == 200) {
       mainpageOptions.value = data.obj || []
     } else {
       console.error('获取首页模板失败', data)
@@ -450,7 +450,6 @@ const fetch = async (params = {}) => {
 
 <style lang="less" scoped>
 .role-management {
-  padding: 16px;
 }
 
 .icon-button {

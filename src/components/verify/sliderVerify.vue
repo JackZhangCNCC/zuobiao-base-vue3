@@ -120,7 +120,7 @@ function initDom() {
 async function getCaptcha() {
   isLoading.value = true
   try {
-    // 生成一个新的UUID，这个是我们要保留的原始UUID
+    // 生成一个新的UUID，这个是要保留的原始UUID
     uuId.value = uuidv4()
     console.log('生成的UUID (发送到后端):', uuId.value)
 

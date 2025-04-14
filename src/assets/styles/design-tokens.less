@@ -1,0 +1,109 @@
+/* 设计规范变量 - 基于设计图 */
+
+// 一、字体规范
+// 字体层级
+@font-size-t5: 24px;  // 特别突出文本
+@font-size-t4: 22px;  // 重要标题文本
+@font-size-t3: 16px;  // 模块标题
+@font-size-t2: 14px;  // 导航、表格、表单内容（基础字号）
+@font-size-t1: 12px;  // 提示文本、补充说明
+
+// 行高
+@line-height-tight: 1.2;    // 紧凑行高
+@line-height-base: 1.5;     // 基础行高
+@line-height-loose: 1.8;    // 宽松行高
+
+// 字重
+@font-weight-regular: 400;  // 常规
+@font-weight-medium: 500;   // 中等
+@font-weight-bold: 600;     // 加粗
+
+// 二、颜色规范
+// 主要按钮
+@btn-primary: #1F3BC3;                  // 主要按钮 
+@btn-primary-hover: #2A4EFF;            // 悬停状态
+@btn-primary-active: #1F3BC3;           // 激活状态
+@btn-primary-disabled: #E6E9F6;         // 禁用状态
+@btn-primary-selected-color: #FFFFFF;   // 选中状态
+
+// 普通按钮
+@color-default: #EFF1FC;            // 普通按钮背景色
+@color-default-hover: #FFFFFF;      // 普通按钮悬停背景色
+@color-default-active: #EFF1FC;     // 普通按钮激活背景色
+@color-default-text: #1F3BC3;       // 普通按钮文字颜色
+@color-default-border: #364FC7;     // 普通按钮边框颜色
+
+@btn-disabled: #E6E9F6 !important;           // 按钮禁用状态
+@btn-disabled-text: #99A0C5 !important;      // 按钮禁用状态文字
+
+// 功能色
+@color-success: #52C41A;    // 成功
+@color-warning: #FAAD14;    // 警告
+@color-error: #E34D59;      // 错误
+@color-error-hover: #FF7983;
+@color-error-active: #C52F3B;
+@color-info: #1890FF;       // 信息
+
+// 中性色
+@gray-1: #FFFFFF;           // 白色
+@gray-2: #f1f3f8;           // 背景色
+@gray-3: #F5F5F8;           // 表头背景
+@gray-4: #E0E0F0;           // 分割线
+@gray-5: #D9D9D9;           // 边框
+@gray-6: #BFBFBF;           // 禁用
+@gray-7: #8C8C8C;           // 次要文本
+@gray-8: #595959;           // 次要文本
+@gray-9: #262626;           // 主要文本
+@gray-10: #000000;          // 黑色
+
+// 文本颜色
+@text-color-primary: #040849;   // 主要文本
+@text-color-secondary: #66667F; // 次要文本
+@text-color-disabled: #BFBFBF;  // 禁用文本
+@text-color-link: #1F3BC3;      // 链接文本
+
+// 三、间距规范
+// 基础间距
+@spacing-xxs: 4px;  // 极小间距
+@spacing-xs: 8px;   // 小间距
+@spacing-sm: 12px;  // 中小间距
+@spacing-md: 16px;  // 中间距
+@spacing-lg: 24px;  // 大间距
+@spacing-xl: 32px;  // 超大间距
+@spacing-xxl: 48px; // 特大间距
+
+// 四、表单和控件规范
+// 表单元素高度
+@control-height-sm: 24px;   // 小型控件高度
+@control-height-md: 28px;   // 中型控件高度（默认）
+@control-height-lg: 36px;   // 大型控件高度
+
+// 内边距
+@control-padding-horizontal: 12px; // 水平内边距
+@control-padding-vertical: 0;      // 垂直内边距
+
+// 圆角
+@border-radius-sm: 2px;     // 小圆角
+@border-radius-md: 4px;     // 中圆角（默认）
+@border-radius-lg: 8px;     // 大圆角
+@border-radius-circle: 50%; // 圆形
+
+// 边框
+@border-width-base: 1px;           // 边框宽度
+@border-style-base: solid;         // 边框样式
+@border-color-base: @gray-5;       // 边框颜色
+@border-color-split: @gray-4;      // 分割线颜色
+
+// 五、表格规范
+// 表格尺寸
+@table-row-height: 36px;           // 基础行高
+@table-padding-horizontal: 10px;   // 水平内边距
+@table-header-bg: @gray-3;         // 表头背景色
+@table-header-color: @text-color-primary; // 表头文字颜色
+@table-text-color: @text-color-secondary; // 内容文字颜色
+@table-row-hover-bg: #F0F1F7;      // 行悬停背景色
+
+// 六、阴影规范
+@shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);  // 小阴影
+@shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);   // 中阴影
+@shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15); // 大阴影 

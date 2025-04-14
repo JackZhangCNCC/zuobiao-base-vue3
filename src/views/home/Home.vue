@@ -34,6 +34,13 @@
                 <a-statistic title="系统通知" :value="3" />
               </a-col>
             </a-row>
+            <a-row style="margin-top: 16px;">
+              <a-col :span="24" style="text-align: right;">
+                <zb-button type="primary" @click="goToComponentsDemo">
+                  <experiment-outlined /> 组件演示
+                </zb-button>
+              </a-col>
+            </a-row>
           </div>
         </a-card>
       </a-col>
@@ -152,6 +159,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
 import ApexCharts from 'apexcharts'
 import {
   UserOutlined,
@@ -160,8 +168,17 @@ import {
   ShoppingOutlined,
   DollarOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined
+  ArrowDownOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons-vue'
+
+// 路由
+const router = useRouter()
+
+// 组件演示页面跳转
+const goToComponentsDemo = () => {
+  router.push('/test/components')
+}
 
 // 用户信息
 const userStore = useUserStore()
@@ -253,7 +270,6 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .home-container {
-  padding: 16px;
 
   .welcome-row,
   .stats-row,
@@ -268,6 +284,7 @@ onMounted(() => {
     .welcome-title {
       display: flex;
       align-items: center;
+      padding: 12px 0 0 0;
 
       .avatar {
         margin-right: 16px;

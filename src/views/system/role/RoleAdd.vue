@@ -1,13 +1,15 @@
 <template>
-  <a-drawer
+  <zb-drawer
     title="新增角色"
     :maskClosable="false"
     width="650"
     placement="right"
-    :closable="false"
+    :closable="true"
     @close="onClose"
-    :open="roleAddVisiable"
+    :visible="roleAddVisiable"
+    @update:visible="val => val === false && onClose()"
     style="height: calc(100% - 55px);overflow: auto;padding-bottom: 53px;"
+    :hideFooter="true"
   >
     <a-form ref="formRef" :model="role" :rules="rules">
       <a-form-item
@@ -60,7 +62,7 @@
         </a-tree>
       </a-form-item>
     </a-form>
-    <div class="drawer-bootom-button">
+    <div class="drawer-bootom-button footer-btn">
       <a-dropdown
         style="float: left"
         trigger="click"
@@ -89,7 +91,7 @@
       </a-popconfirm>
       <a-button @click="handleSubmit" type="primary" :loading="loading">提交</a-button>
     </div>
-  </a-drawer>
+  </zb-drawer>
 </template>
 
 <script setup>

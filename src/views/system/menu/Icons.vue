@@ -17,7 +17,9 @@
               @click="handleChoose(iconName)"
               :class="{ 'icon-selected': selectedIcon === iconName }"
             >
-              <component :is="Icons[iconName]" />
+              <span class="icon-container">
+                <component :is="resolveIconComponent(iconName)" />
+              </span>
               <div class="icon-name">{{ iconName }}</div>
             </div>
           </div>
@@ -29,6 +31,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import IconUtils from '@/utils/iconUtils';
 import * as Icons from '@ant-design/icons-vue';
 
 const visible = ref(false);
@@ -39,19 +42,13 @@ const selectedIcon = ref('');
 // 定义事件
 const emit = defineEmits(['select']);
 
-// 保存所有图标实例的映射，确保动态组件能正确渲染
-const iconComponents = {};
-
-// 获取所有 Ant Design 图标
-const allIcons = Object.keys(Icons)
+// 获取所有图标名称
+const allIcons = Object.keys(IconUtils.getAllIcons())
   .filter(key => key.endsWith('Outlined') || key.endsWith('Filled') || key.endsWith('TwoTone'))
   .sort();
 
 // 初始化所有图标组件
 onMounted(() => {
-  allIcons.forEach(iconName => {
-    iconComponents[iconName] = Icons[iconName];
-  });
   console.log('图标组件已初始化，共有图标:', allIcons.length);
 });
 
@@ -182,7 +179,7 @@ const handleChoose = (icon) => {
   console.log('选择图标:', icon);
 
   // 确保图标是有效的
-  if (Icons[icon]) {
+  if (IconUtils.getIconComponent(icon)) {
     // 延迟关闭，让用户看到选择效果
     setTimeout(() => {
       emit('select', icon);
@@ -226,6 +223,17 @@ const getTabTitle = (type) => {
   return titleMap[type] || type;
 };
 
+// 处理图标名称到组件的转换
+const resolveIconComponent = (iconName) => {
+  // 1. 尝试从导入的图标中获取
+  if (Icons[iconName]) {
+    return Icons[iconName];
+  }
+  
+  // 2. 使用IconUtils处理
+  return IconUtils.getIconComponent(iconName);
+};
+
 // 暴露方法给父组件
 defineExpose({
   open
@@ -248,6 +256,14 @@ defineExpose({
   transition: all 0.3s;
   border-radius: 4px;
   position: relative;
+}
+
+.icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  font-size: 24px;
 }
 
 .icon-item:hover {

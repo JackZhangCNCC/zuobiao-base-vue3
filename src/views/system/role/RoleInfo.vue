@@ -1,13 +1,15 @@
 <template>
-  <a-drawer
+  <zb-drawer
     title="角色信息"
     :maskClosable="false"
     width="650"
     placement="right"
     :closable="true"
     @close="close"
-    :open="roleInfoVisiable"
+    :visible="roleInfoVisiable"
+    @update:visible="val => val === false && close()"
     style="height: calc(100% - 55px);overflow: auto;padding-bottom: 53px;"
+    :hideFooter="true"
   >
     <p>
       <crown-outlined />&nbsp;&nbsp;角色名称：{{ roleInfoData.roleName }}
@@ -36,7 +38,7 @@
       >
       </a-tree>
     </p>
-  </a-drawer>
+  </zb-drawer>
 </template>
 
 <script setup>

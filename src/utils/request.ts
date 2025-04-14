@@ -48,7 +48,7 @@ export function handleResponse<T = any>(
   }
 
   // 处理token过期情况
-  if (data.code === 403 && data.msg === 'token已经过期') {
+  if (data.code == 403 && data.msg == 'token已经过期') {
     const userStore = useUserStore()
     Modal.error({
       title: 'token已过期',
@@ -86,7 +86,7 @@ function createRequest() {
     timeout: 30000,
     responseType: 'json',
     validateStatus(status) {
-      return status === 200
+      return status == 200
     }
   })
 
@@ -132,7 +132,7 @@ function createRequest() {
   service.interceptors.response.use(
     (config) => {
       // token过期判断
-      if (config.data && config.data.code === 403 && config.data.msg === 'token已经过期') {
+      if (config.data && config.data.code == 403 && config.data.msg == 'token已经过期') {
         const userStore = useUserStore()
         Modal.error({
           title: 'token已过期',
@@ -149,7 +149,7 @@ function createRequest() {
 
       // 增加错误码判断
       const errCode = [6000, 6001, 6004, 6503, 400, 500]
-      if (config.data && config.data.code && errCode.find(n => n === config.data.code)) {
+      if (config.data && config.data.code && errCode.find(n => n == config.data.code)) {
         notification.error({
           message: '系统提示',
           description: config.data.msg,
@@ -162,7 +162,7 @@ function createRequest() {
     },
     (error) => {
       if (error.response) {
-        const errorMessage = error.response.data === null
+        const errorMessage = error.response.data == null
           ? '系统内部异常，请联系网站管理员'
           : error.response.data.message
 
@@ -535,7 +535,7 @@ export const handleMenuResponse = (response: any, successMessage?: string): bool
     console.warn('菜单操作接收到无data属性的响应', response);
 
     // 一些旧接口可能直接返回结果而不包含在data属性中
-    if (response.code === 200 || response.status === 200) {
+    if (response.code == 200 || response.status == 200) {
       if (successMessage) {
         message.success(successMessage);
       }
@@ -548,7 +548,8 @@ export const handleMenuResponse = (response: any, successMessage?: string): bool
 
   // 有data，使用标准处理
   const data = response.data;
-  if (data.code === 200 || data.code === '200') {
+  console.log("🚀 ~ handleMenuResponse ~ data:", data)
+  if (data.code == 200 || data.code == '200') {
     if (successMessage) {
       message.success(successMessage);
     }

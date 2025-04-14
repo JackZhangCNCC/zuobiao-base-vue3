@@ -1,0 +1,275 @@
+/**
+ * Ant Design Vue 组件全局样式定制
+ * 这个文件用于覆盖antdv默认样式，实现全局统一风格
+ */
+
+// 颜色变量
+@bg-color: #f1f3f8;            // 背景色
+@primary-color: #425bf4;       // 主色调
+@text-color: #323b68;          // 主文本色
+@text-color-secondary: #666666; // 次要文本色
+@text-color-light: #aaaaaa;    // 浅色文本
+@disabled-bg: #eeeeee;         // 禁用背景色
+@border-color: #cccccc;        // 边框颜色
+@white: #ffffff;               // 白色
+@radio-checked-color: #1f3bc3; // 单选按钮选中色
+@tag-close-bg: #9da2b8;        // 标签关闭图标背景色
+
+// 尺寸变量
+@pagination-size: 24px;        // 分页元素尺寸
+@icon-size-sm: 12px;           // 小图标尺寸
+
+.ant-layout {
+  background: @bg-color;
+  .ant-layout-footer {
+    background: @bg-color;
+  }
+}
+
+/* 搜索栏相关组件样式 */
+.zb-search-form {
+  .simple-search-area {
+    .keyword-search {
+      width: 360px;
+      .ant-input-group .ant-input-affix-wrapper:not(:last-child) {
+        border-start-start-radius: 4px;
+        border-end-start-radius: 4px;
+      }
+      .ant-input-affix-wrapper {
+        padding: 2px 11px;
+      }
+      .ant-input-group-addon {
+        .ant-input-search-button {
+          height: 28px;
+          &:hover {
+            background-color: @primary-color;
+          }
+        }
+      }
+    }
+    .ant-select-single:not(.ant-select-customize-input) .ant-select-selector {
+      height: 30px;
+    }
+  }
+  .ant-picker {
+    padding: 2px 11px 2px;
+    .ant-picker-input > input {
+      text-align: center;
+    }
+  }
+}
+
+/* 标签样式 */
+.ant-tag {
+  border-color: transparent;
+  color: @text-color;
+  .ant-tag-close-icon {
+    font-size: 13px;
+    > svg {
+      color: @white;
+      background: @tag-close-bg;
+      border-radius: 50%;
+      padding: 3px;
+    }
+  }
+}
+
+/* 表格固定列样式 */
+.ant-table-wrapper .ant-table-cell-fix-left,
+.ant-table-wrapper .ant-table-cell-fix-right {
+  background: transparent;
+}
+
+/* 修复右侧固定列位置 */
+.ant-table-cell-fix-right-first {
+  right: unset !important;
+}
+
+/* 单选按钮样式 */
+.ant-radio-wrapper .ant-radio-inner::after {
+  width: 20px;
+  height: 20px;
+  margin-block-start: -10px;
+  margin-inline-start: -10px;
+  background-color: @radio-checked-color;
+}
+.ant-radio-wrapper .ant-radio-checked .ant-radio-inner {
+  border-color: @primary-color;
+  background-color: @white;
+}
+
+// 修改滚动条样式
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+// 修改分页样式
+.ant-pagination {
+  height: @pagination-size;
+  .ant-pagination-total-text {
+    height: @pagination-size;
+    line-height: @pagination-size;
+    color: @text-color-secondary;
+  }
+  .ant-pagination-prev,
+  .ant-pagination-next {
+    width: @pagination-size;
+    min-width: @pagination-size;
+    height: @pagination-size;
+    line-height: @pagination-size;
+    padding: 0;
+    .ant-pagination-item-link {
+      font-size: 12px;
+      width: @pagination-size;
+      min-width: @pagination-size;
+      height: @pagination-size;
+      line-height: @pagination-size;
+      background: @disabled-bg;
+      border: none;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+      .anticon {
+        width: @icon-size-sm;
+        height: @icon-size-sm;
+        font-size: @icon-size-sm;
+        color: @text-color-light;
+      }
+    }
+  }
+  .ant-pagination-item {
+    min-width: @pagination-size;
+    margin-right: 8px;
+    line-height: @pagination-size;
+    text-align: center;
+    background-color: @white;
+    border-radius: 4px;
+    outline: 0;
+    cursor: pointer;
+    width: @pagination-size;
+    height: @pagination-size;
+    padding: 0;
+    border: none;
+    background: @disabled-bg;
+    a {
+      width: @pagination-size;
+      height: @pagination-size;
+      padding: 0;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+      color: @text-color-secondary;
+    }
+    &:hover {
+      a {
+        color: @primary-color;
+      }
+    }
+  }
+  .ant-pagination-prev:hover .ant-pagination-item-link,
+  .ant-pagination-next:hover .ant-pagination-item-link {
+    a {
+      color: @primary-color;
+    }
+    i {
+      color: @primary-color;
+    }
+  }
+  .ant-pagination-disabled {
+    i {
+      color: @text-color-light !important;
+    }
+    &:hover {
+      background: @disabled-bg;
+    }
+  }
+  .ant-pagination-item-active {
+    font-weight: 500;
+    background: @white;
+    background: @primary-color;
+    border-color: @primary-color;
+    a {
+      color: @white !important;
+    }
+    &:hover {
+      a {
+        color: @white !important;
+      }
+    }
+  }
+  .ant-pagination-item-active:focus {
+    a {
+      color: @white !important;
+    }
+  }
+  .ant-pagination-options {
+    height: @pagination-size;
+    .ant-select-selector {
+      height: @pagination-size;
+      .ant-select-selection-search-input {
+        height: @pagination-size;
+      }
+      .ant-select-selection-item {
+        line-height: @pagination-size;
+      }
+      .ant-select-selection-placeholder {
+        line-height: @pagination-size;
+      }
+    }
+    .ant-select {
+      height: @pagination-size;
+      .ant-select-selection {
+        height: @pagination-size;
+        line-height: @pagination-size;
+        border: 1px solid @border-color;
+        .ant-select-selection__rendered {
+          height: @pagination-size;
+          line-height: @pagination-size;
+          .ant-select-selection-selected-value {
+            color: @text-color-secondary;
+          }
+        }
+        .ant-select-arrow {
+          height: @icon-size-sm;
+          width: @icon-size-sm;
+          .anticon {
+            width: @icon-size-sm;
+            height: @icon-size-sm;
+            font-size: @icon-size-sm;
+            color: @text-color-light;
+          }
+        }
+      }
+    }
+    .ant-pagination-options-quick-jumper {
+      height: @pagination-size;
+      line-height: @pagination-size;
+      input {
+        height: @pagination-size;
+        width: 30px;
+        padding: 4px 2px;
+        text-align: center;
+        border: 1px solid @border-color;
+        color: @border-color;
+      }
+    }
+  }
+  .ant-pagination-jump-next, .ant-pagination-jump-prev {
+    height: @pagination-size;
+    line-height: @pagination-size;
+  }
+}
+
+.ant-table-wrapper .ant-table-cell-fix-left, .ant-table-wrapper .ant-table-cell-fix-right {
+  z-index: auto;
+}

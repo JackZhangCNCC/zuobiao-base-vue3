@@ -37,7 +37,7 @@ const goBack = () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f0f2f5;
+  background-color: #f1f3f8;
 
   .content {
     text-align: center;

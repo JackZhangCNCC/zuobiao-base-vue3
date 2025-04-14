@@ -49,6 +49,27 @@ const routes = [
             meta: { requiresAuth: true, title: '菜单管理', icon: 'MenuOutlined' }
           }
         ]
+      },
+      // 组件测试页面
+      {
+        path: '/test',
+        name: 'Test',
+        redirect: '/test/table',
+        meta: { requiresAuth: true, title: '组件测试', icon: 'AppstoreOutlined' },
+        children: [
+          {
+            path: '/test/table',
+            name: 'TableDemo',
+            component: () => import('../views/test/TableDemo.vue'),
+            meta: { requiresAuth: true, title: '列表组件测试', icon: 'TableOutlined' }
+          },
+          {
+            path: '/test/components',
+            name: 'ComponentsDemo',
+            component: () => import('../views/test/ComponentsDemo.vue'),
+            meta: { requiresAuth: true, title: '组件展示', icon: 'AppstoreOutlined' }
+          }
+        ]
       }
     ]
   },

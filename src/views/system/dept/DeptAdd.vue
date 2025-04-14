@@ -1,10 +1,12 @@
 <template>
-  <a-drawer
+  <zb-drawer
     :title="title"
     :width="720"
-    :visible="deptAddVisiable"
+    v-model:visible="deptAddVisiable"
     :body-style="{ paddingBottom: '80px' }"
     @close="onClose"
+    @confirm="handleSubmit"
+    :confirm-loading="loading"
   >
     <a-form ref="formRef" :model="deptForm" :rules="rules" layout="vertical">
       <a-row :gutter="16">
@@ -46,11 +48,7 @@
         </a-col>
       </a-row>
     </a-form>
-    <div class="drawer-footer">
-      <a-button style="margin-right: 8px" @click="onClose">取消</a-button>
-      <a-button type="primary" @click="handleSubmit" :loading="loading">提交</a-button>
-    </div>
-  </a-drawer>
+  </zb-drawer>
 </template>
 
 <script setup>
@@ -186,14 +184,5 @@ const resetForm = () => {
 </script>
 
 <style scoped>
-.drawer-footer {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  border-top: 1px solid #e9e9e9;
-  padding: 10px 16px;
-  background: #fff;
-  text-align: right;
-}
+/* 已删除底部按钮样式，因为zb-drawer组件已经内置了底部按钮功能 */
 </style>

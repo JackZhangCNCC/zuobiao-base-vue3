@@ -1,11 +1,13 @@
 <template>
   <div>
-    <a-drawer
+    <zb-drawer
       title="编辑菜单"
       :width="600"
-      :open="visible"
+      v-model:visible="visible"
       :body-style="{ paddingBottom: '80px' }"
       @close="onClose"
+      @confirm="onSubmit"
+      :confirm-loading="loading"
     >
       <a-form :model="form" :rules="rules" ref="formRef" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
         <a-form-item label="上级菜单" name="parentId">
@@ -21,18 +23,18 @@
           />
         </a-form-item>
 
-        <a-form-item label="菜单类型" name="type">
-          <a-radio-group v-model:value="form.type" @change="handleTypeChange">
-            <a-radio value="M">目录</a-radio>
-            <a-radio value="C">菜单</a-radio>
+        <a-form-item label="菜单名称" name="menuName">
+          <a-input v-model:value="form.menuName" placeholder="请输入菜单名称" />
+        </a-form-item>
+
+        <a-form-item label="菜单类型" name="isFrame">
+          <a-radio-group v-model:value="form.isFrame" @change="(e) => handleMenuAttributeChange(e.target.value)">
+            <a-radio value="0">内部菜单</a-radio>
+            <a-radio value="1">外部链接</a-radio>
           </a-radio-group>
         </a-form-item>
 
-        <a-form-item label="菜单名称" name="name">
-          <a-input v-model:value="form.name" placeholder="请输入菜单名称" />
-        </a-form-item>
-
-        <a-form-item v-if="form.type !== 'M'" label="组件路径" name="component">
+        <a-form-item label="组件路径" name="component" v-if="form.isFrame === '0'">
           <a-input v-model:value="form.component" placeholder="请输入组件路径" />
         </a-form-item>
 
@@ -47,8 +49,10 @@
         <a-form-item label="菜单图标" name="icon">
           <div class="icon-selector">
             <span @click="showIconSelect" class="icon-wrapper">
-              <component :is="getIconComponent(form.icon)" v-if="form.icon" />
-              <span v-else>点击选择图标</span>
+              <span class="icon-container">
+                <component :is="resolveIconComponent(form.icon)" v-if="form.icon" />
+                <span v-else>点击选择图标</span>
+              </span>
             </span>
             <span class="icon-name ml-2" v-if="form.icon">{{ form.icon }}</span>
           </div>
@@ -58,45 +62,14 @@
           <a-input-number v-model:value="form.orderNum" :min="0" style="width: 100%" />
         </a-form-item>
 
-        <a-form-item label="显示状态" name="visible">
-          <a-radio-group v-model:value="form.visible">
+        <a-form-item label="显示状态" name="status">
+          <a-radio-group v-model:value="form.status">
             <a-radio value="0">显示</a-radio>
             <a-radio value="1">隐藏</a-radio>
           </a-radio-group>
         </a-form-item>
-
-        <a-form-item label="子系统" name="subsystem">
-          <a-select
-            v-model:value="form.subsystem"
-            placeholder="请选择子系统"
-            style="width: 100%"
-            @change="handleSubsystemChange"
-          >
-            <a-select-option v-for="item in subsystemOptions" :key="item.value" :value="item.value">
-              {{ item.text }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-
-        <a-form-item label="系统" name="sysId">
-          <a-select
-            placeholder="请选择系统"
-            class="fullWidth"
-            v-model:value="menu.sysId"
-            @change="handleSysChange"
-          >
-            <a-select-option v-for="item in systemOptions" :key="item.value" :value="item.value">
-              {{ item.text }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
       </a-form>
-
-      <div class="drawer-footer">
-        <a-button style="margin-right: 8px" @click="onClose">取消</a-button>
-        <a-button type="primary" @click="onSubmit">提交</a-button>
-      </div>
-    </a-drawer>
+    </zb-drawer>
 
     <!-- 图标选择器弹窗 -->
     <Icons ref="iconSelectRef" @select="handleIconSelect" />
@@ -106,11 +79,15 @@
 <script setup>
 import { ref, reactive, nextTick, onMounted, watch, computed } from 'vue';
 import Icons from './Icons.vue';
-// 导入所有Ant Design图标
+import { Modal, Tree } from 'ant-design-vue';
+// 导入图标工具类，不再需要直接导入所有图标
+import IconUtils from '@/utils/iconUtils';
 import * as AntIcons from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { useRequest, handleResponse, handleMenuResponse } from '../../../utils/request';
-import { useUserStore } from '../../../stores/user';
+import { useRequest, handleResponse, handleMenuResponse } from '@/utils/request';
+import { useUserStore } from '@/stores/user';
+import { MenuUtils } from '@/utils/menuUtils';
+import { resetObjectValues } from '@/utils/formUtils';
 
 // 获取API
 const { get, post } = useRequest();
@@ -160,58 +137,28 @@ const showIcons = ref(false);
 const form = reactive({
   id: '',
   parentId: undefined,
-  type: 'M',
-  name: '',
+  menuType: 'C', // 保留该字段以兼容后端API期望的数据格式
+  menuName: '',
   component: '',
   path: '',
   perms: '',
   icon: '',
   orderNum: 0,
-  visible: '0',
-  subsystem: '1'
+  status: '0',
+  isFrame: '0',
+  query: '',
+  isEx: '0'
 });
 
 // 表单验证规则
 const rules = {
-  name: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
-  component: [{ required: false, message: '请输入组件路径', trigger: 'blur' }],
+  menuName: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
+  icon: [{ required: true, message: '请选择菜单图标', trigger: 'change' }],
+  orderNum: [{ required: true, message: '请输入显示排序', trigger: 'blur' }],
   path: [{ required: true, message: '请输入路由地址', trigger: 'blur' }],
+  component: [{ required: false, message: '请输入组件路径', trigger: 'blur' }],
   perms: [{ required: false, message: '请输入权限标识', trigger: 'blur' }],
-  subsystem: [{ required: true, message: '请选择子系统', trigger: 'change' }]
 };
-
-// 子系统选项
-const subsystemOptions = ref([]);
-
-// 系统选项
-const systemOptions = ref([
-  { value: '1', text: '系统1' },
-  { value: '2', text: '系统2' },
-  { value: '3', text: '系统3' }
-]);
-
-// 获取子系统列表
-const getSubsystemList = async () => {
-  try {
-    // 获取当前用户ID
-    const userId = userStore.user?.id || '';
-    const { data } = await get(`/auth/sys/selectSysList?userId=${userId}`)
-    if (data.code === 200 && data.obj) {
-      // 转换为下拉选项格式
-      subsystemOptions.value = data.obj.map(item => ({
-        value: item.sysId,
-        text: item.sysName
-      }))
-    }
-  } catch (error) {
-    console.error('获取子系统列表失败', error)
-  }
-}
-
-// 初始化数据
-onMounted(() => {
-  getSubsystemList();
-});
 
 // 打开抽屉
 const open = async (record) => {
@@ -232,17 +179,10 @@ const getMenuTree = async (sysId) => {
   menuTreeKey.value = Date.now(); // 强制重新渲染
 
   try {
-    // 传递系统ID参数，添加type=0表示获取菜单类型，与Vue2项目保持一致
-    const { data } = await get(`auth/menu?type=0&sysId=${sysId || form.subsystem || ''}`)
-
-    if (data.code === 200 && data.obj) {
-      menuTreeData.value = data.obj.rows.children;
-      // 保存所有树节点ID，用于展开/折叠全部功能
-      allTreeKeys.value = data.obj.ids;
-    } else {
-      console.error('获取菜单树数据格式错误', data);
-      menuTreeData.value = [];
-    }
+    // 使用工具类获取菜单树
+    const { treeData, allKeys } = await MenuUtils.getMenuTree(sysId || form.sysId || '');
+    menuTreeData.value = treeData;
+    allTreeKeys.value = allKeys;
   } catch (error) {
     console.error('获取菜单树失败', error);
     menuTreeData.value = [];
@@ -265,7 +205,7 @@ const getMenuInfo = async (id) => {
         if (!list || !list.length) return null;
 
         for (const item of list) {
-          if (item.id === targetId) {
+          if (item.id == targetId) {
             return item;
           }
           if (item.children && item.children.length) {
@@ -282,28 +222,48 @@ const getMenuInfo = async (id) => {
       }
 
       console.log('找到的菜单信息:', menuInfo);
+      
+      // 检查是否为外部链接菜单
+      if (menuInfo && menuInfo.isFrame == '1') {
+        console.log('编辑的是外部链接菜单, path:', menuInfo.path);
+      }
 
       if (menuInfo) {
         // 设置表单数据，保持字段映射一致
         form.id = menuInfo.id;
-        form.parentId = menuInfo.parentId === '0' ? undefined : menuInfo.parentId;
-        form.type = menuInfo.type === '0' ? 'M' : 'C';
-        form.name = menuInfo.text || menuInfo.name || menuInfo.menuName || '';
+        form.parentId = menuInfo.parentId == '0' ? undefined : menuInfo.parentId;
+        form.menuType = 'C'; // 固定为菜单类型
+        form.menuName = menuInfo.text || menuInfo.name || menuInfo.menuName || '';
         form.component = menuInfo.component || '';
         form.path = menuInfo.path || '';
         form.perms = menuInfo.permission || menuInfo.perms || '';
         form.icon = menuInfo.icon || '';
         form.orderNum = menuInfo.order || menuInfo.orderNum || 0;
         // 处理可见状态
-        form.visible = menuInfo.hidden === true || menuInfo.hidden === '1' ? '1' : '0';
-        form.subsystem = menuInfo.sysId;
-        form.isFrame = menuInfo.isFrame || '0';
+        form.status = menuInfo.hidden == true || menuInfo.hidden == '1' ? '1' : '0';
+        form.sysId = menuInfo.sysId;
+        
+        // 确保isFrame值正确设置和同步
+        // 先将isFrame转为字符串以确保一致性
+        const isFrameValue = menuInfo.isFrame?.toString() || '0';
+        form.isFrame = isFrameValue;
+        menu.isFrame = isFrameValue;
+        
+        // 如果是外部链接，组件路径置空
+        if (isFrameValue == '1') {
+          form.component = '';
+        }
+        
+        form.query = menuInfo.query || '';
+        form.isEx = menuInfo.isEx || '0';
 
-        // 设置菜单ID
+        // 设置菜单ID和其他关键属性
         menu.menuId = menuInfo.id;
         menu.sysId = menuInfo.sysId;
+        menu.icon = menuInfo.icon || '';
 
         console.log('设置的图标名称:', form.icon);
+        console.log('设置的菜单类型(isFrame):', form.isFrame);
 
         // 重置表单校验状态
         nextTick(() => {
@@ -329,17 +289,7 @@ const resetForm = () => {
   expandedKeys.value = [];
   checkedKeys.value = [];
   defaultCheckedKeys.value = [];
-  Object.keys(menu).forEach(key => {
-    if (typeof menu[key] === 'string') {
-      menu[key] = '';
-    } else if (typeof menu[key] === 'boolean') {
-      menu[key] = false;
-    } else if (Array.isArray(menu[key])) {
-      menu[key] = [];
-    } else {
-      menu[key] = undefined;
-    }
-  });
+  resetObjectValues(menu);
 };
 
 // 关闭抽屉
@@ -349,22 +299,36 @@ const onClose = () => {
   emit('close');
 };
 
-// 提交表单
-const onSubmit = () => {
-  formRef.value.validate().then(async () => {
-    // 检查选中的父级菜单，兼容树选择器两种模式
-    let checkedArr = Object.prototype.hasOwnProperty.call(checkedKeys.value, 'checked')
-      ? checkedKeys.value.checked
-      : checkedKeys.value;
+// 处理菜单类型变化（内部/外部链接）
+const handleMenuAttributeChange = (value) => {
+  console.log('菜单类型切换为:', value);
+  form.isFrame = value;
+  menu.isFrame = value; // 同步更新menu对象的isFrame字段
+  
+  // 当切换为外部链接时，清空组件路径
+  if (value == '1') {
+    form.component = '';
+  }
+};
 
-    if (checkedArr.length > 1) {
-      message.error('最多只能选择一个上级菜单，请修改');
+// 提交表单
+const onSubmit = async () => {
+  try {
+    // 表单验证
+    await formRef.value.validateFields();
+
+    // 检查是否选择了父菜单
+    if (!form.parentId) {
+      message.error('请选择父菜单');
       return;
     }
 
-    if (checkedArr[0] === menu.menuId) {
-      message.error('不能选择自己作为上级菜单，请修改');
-      return;
+    // 处理请求数据
+    const data = { ...form };
+    
+    // 修正菜单类型为字符串
+    if (typeof data.menuType === 'number') {
+      data.menuType = data.menuType.toString();
     }
 
     loading.value = true;
@@ -373,27 +337,33 @@ const onSubmit = () => {
       // 构建完整的菜单对象，与老系统保持一致
       const updatedMenu = {
         menuId: menu.menuId,
-        menuName: form.name,
-        path: form.path,
-        component: form.component,
-        perms: form.perms,
-        icon: menu.icon, // 使用menu.icon而不是form.icon
-        orderNum: form.orderNum,
-        sysId: form.subsystem,
-        hidden: form.visible === '1',
-        type: '0', // 0 表示菜单 1 表示按钮
-        isFrame: form.isFrame,
+        menuName: data.menuName,
+        path: data.path,
+        component: data.component,
+        perms: data.perms,
+        icon: form.icon,
+        orderNum: data.orderNum,
+        sysId: data.sysId,
+        hidden: data.status == '1',
+        type: data.menuType, // 保留字段以兼容后端API
+        isFrame: data.isFrame,
+        query: data.query,
+        isEx: data.isEx,
       };
 
       // 设置父级ID
-      if (checkedArr.length) {
-        updatedMenu.parentId = checkedArr[0];
+      if (data.parentId) {
+        updatedMenu.parentId = data.parentId;
+      } else if (form.parentId) {
+        // 如果没有新选择的父级菜单但原始表单中有父级ID，则使用原来的父级ID
+        updatedMenu.parentId = form.parentId;
       } else {
+        // 只有当确实没有父级菜单时才设置为空字符串
         updatedMenu.parentId = '';
       }
 
       // 处理外部链接URL
-      if (updatedMenu.isFrame === '1' && updatedMenu.path) {
+      if (updatedMenu.isFrame == '1' && updatedMenu.path) {
         if (!updatedMenu.path.startsWith('http://') && !updatedMenu.path.startsWith('https://')) {
           updatedMenu.path = 'http://' + updatedMenu.path;
         }
@@ -401,10 +371,13 @@ const onSubmit = () => {
 
       const response = await post('auth/menu/update', updatedMenu);
 
-      // 使用专门针对菜单接口的响应处理函数，移除成功提示参数
+      // 使用专门针对菜单接口的响应处理函数
       if (handleMenuResponse(response, null)) {
-        resetForm();
-        emit('success');
+        visible.value = false; // 先关闭抽屉，再重置表单
+        nextTick(() => {
+          resetForm();
+          emit('success');
+        });
       }
     } catch (error) {
       console.error('修改菜单失败', error);
@@ -412,17 +385,22 @@ const onSubmit = () => {
     } finally {
       loading.value = false;
     }
-  }).catch(error => {
+  } catch (error) {
     console.log('表单验证失败', error);
-  });
+  }
 };
 
-// 处理菜单类型变化
-const handleTypeChange = (e) => {
-  form.type = e.target.value;
-  if (form.type === 'M') {
-    form.component = '';
+// 处理图标名称到组件的转换
+const resolveIconComponent = (iconName) => {
+  if (!iconName) return null;
+  
+  // 1. 尝试从导入的图标中直接获取
+  if (AntIcons[iconName]) {
+    return AntIcons[iconName];
   }
+  
+  // 2. 使用IconUtils处理
+  return IconUtils.getIconComponent(iconName);
 };
 
 // 显示图标选择器
@@ -445,19 +423,19 @@ defineExpose({
 // 定义事件
 const emit = defineEmits(['close', 'success']);
 
-// 系统选择变化
-const handleSysChange = (value) => {
-  // 更新两处系统ID，确保同步
+// 子系统变化
+const handleSubsystemChange = (value) => {
+  // 更新系统ID
   menu.sysId = value;
-  form.subsystem = value;
-  console.log('系统已变更，当前选择系统ID:', value);
+  form.sysId = value;
+  console.log('子系统已变更，当前选择系统ID:', value);
 
   // 清空上级菜单选择，因为切换系统后上级菜单列表会变化
   form.parentId = undefined;
 
   // 系统变更后重新获取对应系统的菜单树
   getMenuTree(value);
-}
+};
 
 // 设置表单值 - 修复字段映射和初始化
 const setFormValues = (menuData) => {
@@ -467,20 +445,24 @@ const setFormValues = (menuData) => {
   resetForm();
 
   // 设置表单字段，保持与Vue2项目一致的字段映射
-  form.name = menuData.text || menuData.name;
+  form.menuName = menuData.text || menuData.name;
   form.path = menuData.path || '';
   form.component = menuData.component || '';
   form.perms = menuData.permission || menuData.perms || '';
   form.icon = menuData.icon || '';
   form.orderNum = menuData.order || menuData.orderNum || 0;
-  form.visible = menuData.hidden ? '1' : '0';
-  form.subsystem = menuData.sysId;
-  form.type = menuData.type === '0' ? 'M' : 'C';
+  form.status = menuData.hidden ? '1' : '0';
+  form.sysId = menuData.sysId;
+  form.menuType = 'C'; // 固定为菜单类型
   form.isFrame = menuData.isFrame || '0';
+  form.query = menuData.query || '';
+  form.isEx = menuData.isEx || '0';
 
-  // 设置菜单ID
+  // 设置菜单ID和其他关键属性
   menu.menuId = menuData.id;
   menu.sysId = menuData.sysId;
+  menu.isFrame = menuData.isFrame || '0';
+  menu.icon = menuData.icon || '';
 
   // 设置父级ID
   if (menuData.parentId && menuData.parentId !== '0') {
@@ -524,98 +506,6 @@ const handleIconChoose = (value) => {
 const deleteIcon = () => {
   menu.icon = '';
 };
-
-// 获取图标组件
-const getIconComponent = (iconName) => {
-  if (!iconName) {
-    console.log('图标名称为空');
-    return null;
-  }
-
-  console.log('尝试解析图标:', iconName);
-
-  // 输出可用的图标列表，帮助调试
-  console.log('可用图标列表示例:', Object.keys(AntIcons).slice(0, 10));
-
-  // 首先尝试直接匹配
-  if (AntIcons[iconName]) {
-    console.log('直接匹配成功:', iconName);
-    return AntIcons[iconName];
-  }
-
-  // 尝试转换成Outlined后缀形式匹配
-  const outlinedName = iconName.charAt(0).toUpperCase() + iconName.slice(1) + 'Outlined';
-  if (AntIcons[outlinedName]) {
-    console.log('Outlined后缀匹配成功:', outlinedName);
-    return AntIcons[outlinedName];
-  }
-
-  // 尝试全部首字母大写
-  const capitalizedName = iconName.charAt(0).toUpperCase() + iconName.slice(1);
-  if (AntIcons[capitalizedName]) {
-    console.log('首字母大写匹配成功:', capitalizedName);
-    return AntIcons[capitalizedName];
-  }
-
-  // 尝试 XXXFilled 格式
-  const filledName = iconName.charAt(0).toUpperCase() + iconName.slice(1) + 'Filled';
-  if (AntIcons[filledName]) {
-    console.log('Filled后缀匹配成功:', filledName);
-    return AntIcons[filledName];
-  }
-
-  // 尝试 XXXTwoTone 格式
-  const twoToneName = iconName.charAt(0).toUpperCase() + iconName.slice(1) + 'TwoTone';
-  if (AntIcons[twoToneName]) {
-    console.log('TwoTone后缀匹配成功:', twoToneName);
-    return AntIcons[twoToneName];
-  }
-
-  // 尝试常见的简写映射
-  const iconMap = {
-    'global': 'GlobalOutlined',
-    'user': 'UserOutlined',
-    'team': 'TeamOutlined',
-    'tool': 'ToolOutlined',
-    'setting': 'SettingOutlined',
-    'solution': 'SolutionOutlined',
-    'bell': 'BellOutlined',
-    'file': 'FileOutlined',
-    'home': 'HomeOutlined',
-    'dashboard': 'DashboardOutlined',
-    'plus': 'PlusOutlined',
-    'edit': 'EditOutlined',
-    'delete': 'DeleteOutlined',
-    'save': 'SaveOutlined',
-    'search': 'SearchOutlined',
-    'question': 'QuestionOutlined',
-    'info': 'InfoOutlined'
-  };
-
-  if (iconMap[iconName.toLowerCase()]) {
-    const mappedIcon = iconMap[iconName.toLowerCase()];
-    console.log('映射匹配成功:', iconName, '->', mappedIcon);
-    return AntIcons[mappedIcon];
-  }
-
-  console.warn('找不到图标组件:', iconName);
-  // 默认返回一个问号图标，避免渲染失败
-  return AntIcons['QuestionCircleOutlined'];
-};
-
-// 子系统变化
-const handleSubsystemChange = (value) => {
-  // 更新系统ID
-  menu.sysId = value;
-  form.subsystem = value;
-  console.log('子系统已变更，当前选择系统ID:', value);
-
-  // 清空上级菜单选择，因为切换系统后上级菜单列表会变化
-  form.parentId = undefined;
-
-  // 系统变更后重新获取对应系统的菜单树
-  getMenuTree(value);
-};
 </script>
 
 <style scoped>
@@ -641,11 +531,6 @@ const handleSubsystemChange = (value) => {
   border: 1px dashed #d9d9d9;
   cursor: pointer;
   border-radius: 4px;
-  min-width: 40px;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .icon-wrapper:hover {
@@ -653,13 +538,22 @@ const handleSubsystemChange = (value) => {
   color: #1890ff;
 }
 
+.icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  min-width: 24px;
+  min-height: 24px;
+}
+
 .icon-name {
-  font-size: 12px;
+  margin-left: 12px;
   color: #666;
-  margin-left: 8px;
+  font-size: 14px;
 }
 
 .ml-2 {
   margin-left: 8px;
 }
-</style>
+</style> 

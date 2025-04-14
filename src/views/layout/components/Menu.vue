@@ -7,36 +7,39 @@
     :inline-collapsed="appStore.sidebarCollapsed"
     :force-sub-menu-render="true"
   >
-    <template v-for="menu in menus" :key="menu.path">
+    <template v-for="menu in menus" :key="getMenuKey(menu)">
       <!-- 有子菜单的情况 -->
       <template v-if="menu.children && menu.children.length > 0">
-        <a-sub-menu :key="menu.path">
+        <a-sub-menu :key="getMenuKey(menu)">
           <template #icon>
-            <component :is="menu.meta?.icon || 'AppstoreOutlined'" />
+            <component :is="getIconComponent(menu.meta?.icon || menu.icon)" />
           </template>
-          <template #title>{{ menu.meta?.title || menu.name }}</template>
+          <template #title>{{ menu.meta?.title || menu.name || menu.text }}</template>
 
           <!-- 递归渲染子菜单 -->
           <a-menu-item
             v-for="subMenu in menu.children"
-            :key="subMenu.path"
+            :key="getMenuKey(subMenu)"
             @click="handleMenuClick(subMenu)"
           >
             <template #icon>
-              <component :is="subMenu.meta?.icon || 'FileOutlined'" />
+              <component :is="getIconComponent(subMenu.meta?.icon || subMenu.icon)" />
             </template>
-            {{ subMenu.meta?.title || subMenu.name }}
+            {{ subMenu.meta?.title || subMenu.name || subMenu.text }}
           </a-menu-item>
         </a-sub-menu>
       </template>
 
       <!-- 没有子菜单的情况 -->
       <template v-else>
-        <a-menu-item :key="menu.path" @click="handleMenuClick(menu)">
+        <a-menu-item :key="getMenuKey(menu)" @click="handleMenuClick(menu)">
           <template #icon>
-            <component :is="menu.meta?.icon || 'FileOutlined'" />
+            <component :is="getIconComponent(menu.meta?.icon || menu.icon)" />
           </template>
-          {{ menu.meta?.title || menu.name }}
+          <span>
+            {{ menu.meta?.title || menu.name || menu.text }}
+            <LinkOutlined v-if="isExternalLink(menu)" class="external-link-icon" />
+          </span>
         </a-menu-item>
       </template>
     </template>
@@ -48,27 +51,41 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
-
-// 导入图标
-import {
-  HomeOutlined,
-  SettingOutlined,
-  UserOutlined,
-  TeamOutlined,
-  FileOutlined,
-  AppstoreOutlined,
-  SafetyCertificateOutlined,
-  MenuOutlined,
-  DashboardOutlined
-} from '@ant-design/icons-vue'
+import MenuHandlerUtils from '@/utils/menuHandlerUtils'
+import ExternalLinkUtils from '@/utils/externalLinkUtils'
+import IconUtils from '@/utils/iconUtils'
+import { LinkOutlined, MenuOutlined } from '@ant-design/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 const userStore = useUserStore()
 
+// 检查菜单项是否为外部链接
+const isExternalLink = (menu) => {
+  return menu.isFrame == '1' || menu.isFrame === 1 || ExternalLinkUtils.isExternalLink(menu.path);
+}
+
+// 获取菜单的唯一键，用于菜单项的key
+const getMenuKey = (menu) => {
+  if (!menu) return '';
+  
+  // 如果是路由对象
+  if (menu.path) {
+    return menu.path;
+  }
+  
+  // 如果是路径字符串
+  if (typeof menu === 'string') {
+    return menu;
+  }
+  
+  // 默认使用菜单ID或生成随机ID
+  return menu.id || Date.now().toString();
+}
+
 // 当前选中的菜单
-const selectedKeys = ref([route.path])
+const selectedKeys = ref([getMenuKey(route)])
 // 当前展开的子菜单
 const openKeys = ref([])
 
@@ -91,7 +108,19 @@ const menus = computed(() => {
 
 // 处理菜单点击
 const handleMenuClick = (menu) => {
-  router.push(menu.path)
+  // 检查是否为外部链接
+  if (isExternalLink(menu)) {
+    // 使用外部链接工具处理
+    ExternalLinkUtils.openExternalLink(menu.path, {
+      extraParams: {
+        menuId: menu.id || '',
+        menuName: menu.name || menu.text || ''
+      }
+    });
+  } else {
+    // 内部路由跳转
+    router.push(menu.path);
+  }
 }
 
 // 监听路由变化，更新选中的菜单
@@ -157,6 +186,22 @@ const findParentPathsByPath = (path) => {
 
   return paths
 }
+
+// 获取图标组件 - 使用工具类
+const getIconComponent = (icon) => {
+  if (!icon) {
+    // console.log('图标名称为空，返回默认图标');
+    return MenuOutlined;
+  }
+  
+  try {
+    const component = IconUtils.getIconComponent(icon);
+    return component;
+  } catch (error) {
+    console.error('图标转换错误:', error);
+    return MenuOutlined;
+  }
+}
 </script>
 
 <style lang="less" scoped>
@@ -164,5 +209,11 @@ const findParentPathsByPath = (path) => {
   border-right: 0;
   overflow-y: auto;
   height: calc(100vh - 112px);
+}
+
+.external-link-icon {
+  margin-left: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
 }
 </style>

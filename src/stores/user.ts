@@ -135,7 +135,7 @@ export const useUserStore = defineStore('user', () => {
       })
       const data = response.data
 
-      if (data.code === 200) {
+      if (data.code == 200) {
         routes.value = data.obj || []
         routesLoaded.value = true
         return true
